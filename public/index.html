@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+            background-color: #111;
+        }
+        #info {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #restart {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+        }
+        #restart:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake Game</h1>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="info">
+        <p>Score: <span id="score">0</span></p>
+        <p>High Score: <span id="highScore">0</span></p>
+        <p id="gameStatus">Use arrow keys to move. Pause with Space.</p>
+        <button id="restart">Restart Game</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [{x: 10, y: 10}];
+        let food = {};
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let gameRunning = true;
+        let paused = false;
+        const initialSpeed = 150;
+        let speed = initialSpeed;
+
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('highScore');
+        const restartBtn = document.getElementById('restart');
+        const gameStatus = document.getElementById('gameStatus');
+
+        // Load high score from localStorage
+        let highScore = localStorage.getItem('highScore') || 0;
+        highScoreDisplay.textContent = highScore;
+
+        function randomTile() {
+            return Math.floor(Math.random() * tileCount);
+        }
+
+        function generateFood() {
+            food = {
+                x: randomTile(),
+                y: randomTile()
+            };
+        }
+
+        function drawGame() {
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw snake
+            ctx.fillStyle = '#0f0';
+            for (let segment of snake) {
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+            }
+
+            // Draw food
+            ctx.fillStyle = '#f00';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+        }
+
+        function moveSnake() {
+            if (!gameRunning || paused) return;
+
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+            // Check wall collision
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                gameOver();
+                return;
+            }
+
+            // Check self collision
+            for (let segment of snake) {
+                if (head.x === segment.x && head.y === segment.y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            snake.unshift(head);
+
+            // Check food
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreDisplay.textContent = score;
+                generateFood();
+                speed = Math.max(50, speed - 5); // Increase speed
+            } else {
+                snake.pop();
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            gameStatus.textContent = 'Game Over! Press Restart.';
+            restartBtn.style.display = 'inline-block';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreDisplay.textContent = highScore;
+            }
+        }
+
+        function gameLoop() {
+            moveSnake();
+            drawGame();
+            setTimeout(() => {
+                requestAnimationFrame(gameLoop);
+            }, speed);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning && e.key !== ' ') {
+                return;
+            }
+
+            const { key } = e;
+            if (key === 'ArrowLeft' && dx === 0) {
+                dx = -1;
+                dy = 0;
+            } else if (key === 'ArrowUp' && dy === 0) {
+                dx = 0;
+                dy = -1;
+            } else if (key === 'ArrowRight' && dx === 0) {
+                dx = 1;
+                dy = 0;
+            } else if (key === 'ArrowDown' && dy === 0) {
+                dx = 0;
+                dy = 1;
+            } else if (key === ' ') {
+                e.preventDefault();
+                if (gameRunning) {
+                    paused = !paused;
+                    gameStatus.textContent = paused ? 'Paused' : 'Use arrow keys to move. Pause with Space.';
+                }
+            }
+        });
+
+        restartBtn.addEventListener('click', () => {
+            snake = [{x: 10, y: 10}];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            speed = initialSpeed;
+            gameRunning = true;
+            paused = false;
+            scoreDisplay.textContent = score;
+            gameStatus.textContent = 'Use arrow keys to move. Pause with Space.';
+            restartBtn.style.display = 'none';
+            generateFood();
+        });
+
+        generateFood();
+        gameLoop();
+    </script>
+</body>
+</html>
+</content>
+</create_file>
